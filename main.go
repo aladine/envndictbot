@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	util "github.com/aladine/dictutil"
-	"github.com/tucnak/telebot"
-	"gopkg.in/redis.v3"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -17,6 +13,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	util "github.com/aladine/dictutil"
+	"github.com/tucnak/telebot"
+	"gopkg.in/redis.v3"
 )
 
 const (
@@ -67,9 +68,6 @@ func main() {
 	bot.Listen(messages, 2*time.Second)
 
 	for message := range messages {
-		if message.IsService() {
-			continue
-		}
 		sender_id := message.Chat.ID
 
 		// analytics purpose
