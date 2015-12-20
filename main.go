@@ -94,16 +94,18 @@ func GetDefinition(msg string, sender telebot.Chat) string {
 			return ""
 		}
 	}
-
-	if strings.HasPrefix(msg, "/start") {
+	
+	switch {
+	case strings.HasPrefix(msg, "/start"):
 		definition = fmt.Sprintf(GREETING_MSG, GetName(sender), GetName(sender))
-	} else if strings.HasPrefix(msg, "/") || msg == "" {
+	case strings.HasPrefix(msg, "/") || msg == "":
 		definition = HELP_MSG
-	} else if strings.HasPrefix(msg, "/stop") {
+	case strings.HasPrefix(msg, "/stop"):
 		definition = BYE_MSG
-	} else {
+	default: 
 		definition = GetDefinitionFromDb(msg, sender)
 	}
+	
 	return definition
 }
 
@@ -117,7 +119,9 @@ func GetDefinitionFromDb(word string, sender telebot.Chat) string {
 
 	// should get from redis
 	desc, err := redis_client.Get(word).Result()
-	if err == redis.Nil {
+	if err == nil {
+		return desc
+	} else if err == redis.Nil {
 		result, err := dict.Check(word)
 		if err != nil {
 			if r.MatchString(word) {
@@ -137,11 +141,9 @@ func GetDefinitionFromDb(word string, sender telebot.Chat) string {
 			SetWord(word, result)
 			return result
 		}
-	} else if err != nil {
+	} else {
 		log.Errorln(err.Error())
 		return ""
-	} else {
-		return desc
 	}
 }
 
