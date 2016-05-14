@@ -34,7 +34,7 @@ const (
 	YURL                     = "https://translate.yandex.net/api/v1.5/tr.json/translate"
 )
 
-var redis_client *redis.Client
+var redisClient *redis.Client
 var r, _ = regexp.Compile(`^[[:blank:][:graph:]]+$`)
 var _, filename, _, _ = runtime.Caller(0)
 var base = path.Join(path.Dir(filename), "./data/en_vi")
@@ -49,7 +49,7 @@ type Result struct {
 func main() {
 
 	//init redis
-	redis_client = redis.NewClient(&redis.Options{
+	redisClient = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       1,
@@ -72,7 +72,7 @@ func main() {
 
 		// analytics purpose
 		k := "u:" + strconv.Itoa(sender_id)
-		redis_client.ZIncrBy("sorted_users", 1, k)
+		redisClient.ZIncrBy("sorted_users", 1, k)
 
 		definition := GetDefinition(message.Text, message.Chat)
 
@@ -83,6 +83,7 @@ func main() {
 	}
 }
 
+// GetDefinition get definition
 func GetDefinition(msg string, sender telebot.Chat) string {
 	var definition string
 	if sender.IsGroupChat() {
@@ -94,7 +95,7 @@ func GetDefinition(msg string, sender telebot.Chat) string {
 			return ""
 		}
 	}
-	
+
 	switch {
 	case strings.HasPrefix(msg, "/start"):
 		definition = fmt.Sprintf(GREETING_MSG, GetName(sender), GetName(sender))
@@ -102,23 +103,24 @@ func GetDefinition(msg string, sender telebot.Chat) string {
 		definition = HELP_MSG
 	case strings.HasPrefix(msg, "/stop"):
 		definition = BYE_MSG
-	default: 
+	default:
 		definition = GetDefinitionFromDb(msg, sender)
 	}
-	
+
 	return definition
 }
 
+// GetDefinitionFromDb defines a function lookup from db/map
 func GetDefinitionFromDb(word string, sender telebot.Chat) string {
 	word = strings.Trim(strings.ToLower(word), " ")
 	sender_id := sender.ID
 
 	// analytics purpose
 	w := "w:" + word
-	redis_client.ZIncrBy("sorted_words", 1, w)
+	redisClient.ZIncrBy("sorted_words", 1, w)
 
 	// should get from redis
-	desc, err := redis_client.Get(word).Result()
+	desc, err := redisClient.Get(word).Result()
 	if err == nil {
 		return desc
 	} else if err == redis.Nil {
@@ -147,6 +149,7 @@ func GetDefinitionFromDb(word string, sender telebot.Chat) string {
 	}
 }
 
+// GetDefinitionYandex get definitions from yandex
 func GetDefinitionYandex(word string) (string, error) {
 	params := url.Values{}
 
@@ -193,7 +196,7 @@ func GetName(sender telebot.Chat) string {
 }
 
 func SetWord(word, def string) {
-	err := redis_client.Set(word, def, 0).Err()
+	err := redisClient.Set(word, def, 0).Err()
 	if err != nil {
 		log.Errorln(err.Error())
 	}
