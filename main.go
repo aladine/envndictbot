@@ -40,6 +40,7 @@ var _, filename, _, _ = runtime.Caller(0)
 var base = path.Join(path.Dir(filename), "./data/en_vi")
 var dict = util.NewDictionary(base)
 
+// Result is the response from yandex
 type Result struct {
 	Code int      `json:"code"`
 	Lang string   `json:"lang"`
@@ -143,10 +144,9 @@ func GetDefinitionFromDb(word string, sender telebot.Chat) string {
 			SetWord(word, result)
 			return result
 		}
-	} else {
-		log.Errorln(err.Error())
-		return ""
 	}
+	log.Errorln(err.Error())
+	return ""
 }
 
 // GetDefinitionYandex get definitions from yandex
